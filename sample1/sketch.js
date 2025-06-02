@@ -180,6 +180,17 @@ function drawIntro() {
   camera();
   noLights();
   background(30);
+
+  push();
+  translate(-width / 2 + 20, -height / 2 + 20); // 좌측 상단 위치
+  textAlign(LEFT, TOP);
+  fill(255, 180);
+  textSize(14);
+  text("조작법 안내:\nC - 고요\nA - 분노\nP - 공포\nE - 엔딩/크레딧", 0, 0);
+  pop();
+
+
+
   
   // 3개의 회전하는 토러스
   push();
