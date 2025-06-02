@@ -91,6 +91,11 @@ let angerQuote = [
   "마음이 들고 일어나는 순간에 진심이 숨겨져 있다.",
   "지는 해를 깨우려 노력하지 말거라\n너는 달빛에 더 아름답다"
 ];
+let panicQuote = [
+  "멈춤 속에서 우리는 진짜 나를 마주한다.",
+  "잠겨 죽어도 좋으니 너는 물처럼 내게 밀려오라",
+  "바다를 무서워하지 않는 사람은 머지 않아 익사할 것이다. \n그러나 우리는 바다를 두려워하기 때문에, 우리는 이따금씩 익사할 뿐이다."
+];
 
 let quoteIndex = 0;
 let changeInterval = 600;
@@ -317,7 +322,13 @@ function DisplayQuote() {
     if (t === 599) {
       quoteIndex = (quoteIndex + 1) % angerQuote.length;
     }
+  } else if (emotion === 'panic') {
+    currentQuote = panicQuote[quoteIndex];
+    if (t === 599) {
+      quoteIndex = (quoteIndex + 1) % angerQuote.length;
+    }
   }
+  
 
   push();
   noLights();
