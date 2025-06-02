@@ -186,7 +186,7 @@ function drawIntro() {
   textAlign(LEFT, TOP);
   fill(255, 180);
   textSize(14);
-  text("조작법 안내:\nC - 고요\nA - 분노\nP - 공포\nE - 엔딩/크레딧", 0, 0);
+  text("조작법 안내:\n감정 인터렉션\nC - 고요\nA - 분노\nP - 공포\nE - 엔딩/크레딧", 0, 0);
   pop();
 
 
