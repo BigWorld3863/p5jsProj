@@ -84,7 +84,6 @@ let calmQuote = [
   "오는 것을 거절하지 말고 \n가는 것을 잡지 마라",
   "고요는 때때로 가장 큰 대답이다.",
   "눈이 오면 눈길을 걷고 \n비가 오면 빗길을 걸어가라"
-  //"잠겨 죽어도 좋으니 너는 물처럼 내게 밀려오라"
 ];
 let angerQuote = [
   "어떤 감정도 고유의 모습을 오랫동안 지키지 못한다.\n마치 파도처럼.",
@@ -93,8 +92,8 @@ let angerQuote = [
 ];
 let panicQuote = [
   "멈춤 속에서 우리는 진짜 나를 마주한다.",
-  "잠겨 죽어도 좋으니 너는 물처럼 내게 밀려오라",
-  "바다를 무서워하지 않는 사람은 머지 않아 익사할 것이다. \n그러나 우리는 바다를 두려워하기 때문에, 우리는 이따금씩 익사할 뿐이다."
+  "바다를 무서워하지 않는 사람은 머지 않아 익사할 것이다. \n그러나 우리는 바다를 두려워하기 때문에, 우리는 이따금씩 익사할 뿐이다.",
+  "잠겨 죽어도 좋으니 물처럼 내게 밀려오라",
 ];
 
 let quoteIndex = 0;
@@ -325,19 +324,22 @@ function DisplayQuote() {
   } else if (emotion === 'panic') {
     currentQuote = panicQuote[quoteIndex];
     if (t === 599) {
-      quoteIndex = (quoteIndex + 1) % angerQuote.length;
+      quoteIndex = (quoteIndex + 1) % panicQuote.length;
     }
   }
   
 
   push();
   noLights();
-  translate(-width / 2 + 20, -height / 2 + 20);
+  translate(-width / 2 + width * 0.2, -height / 2 + height * 0.1);
   if (emotion === 'calm'){
       fill(26, 26, 128, alpha);
   }
   else if (emotion === 'anger'){
     fill(255, alpha);
+  }
+  else if (emotion === 'panic'){
+    fill(200, 220, 255, alpha);
   }
   textFont(myFont);
   textSize(20);
