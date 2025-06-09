@@ -62,14 +62,14 @@ class FearParticle {
 
 //전역변수 추가
 let particles = [];
-let fearParticles = []
+let fearParticles = [];
 let exploded = false;
 let explosionTimer = 200;
 let camPos;
 
 
-
-
+let emotionIndex = ['calm', 'anger', 'panic', 'joy'];
+let indexNum = 0;
 
 let currentScreen = 'intro';
 let emotion = 'calm';
@@ -81,23 +81,20 @@ let blurDuration = 30;       // 블러 지속 프레임 수 (약 0.5초)
 
 let myFont;
 let calmQuote = [
-  "오는 것을 거절하지 말고 \n가는 것을 잡지 마라",
-  "고요는 때때로 가장 큰 대답이다.",
-  "눈이 오면 눈길을 걷고 \n비가 오면 빗길을 걸어가라"
+  "나는 고요함이야\n 세상이 아무 말도 하지 않을 때, 나는 너에게 말해.", "그 침묵 속에서 너는 비로소 너 자신을 마주할 수 있지",
 ];
 let angerQuote = [
-  "어떤 감정도 고유의 모습을 오랫동안 지키지 못한다.\n마치 파도처럼.",
-  "마음이 들고 일어나는 순간에 진심이 숨겨져 있다.",
-  "지는 해를 깨우려 노력하지 말거라\n너는 달빛에 더 아름답다"
+  "안녕, 나는 분노야",
+  "내가 나타났다고 놀라지 마\n고요함이 무시당했을 때, 나는 너를 지키러 온 거야",
+  "나를 두려워하지 마 — 나는 너의 ‘지킴이’야",
 ];
 let panicQuote = [
-  "멈춤 속에서 우리는 진짜 나를 마주한다.",
-  "바다를 무서워하지 않는 사람은 머지 않아 익사할 것이다. \n그러나 우리는 바다를 두려워하기 때문에, 우리는 이따금씩 익사할 뿐이다.",
-  "잠겨 죽어도 좋으니 물처럼 내게 밀려오라",
+  "나는 공포야\n분노조차 감당되지 않았을 때, 나의 차례가 와",
+  "나는 너를 혼란스럽게 하지만, 사실…\n나는 네가 얼마나, 소중한 존재인지를 보여주고 싶었을 뿐이야.",
 ];
 
 let quoteIndex = 0;
-let changeInterval = 600;
+let changeInterval = 300;
 
 let introTexts = [
   "감정은 때때로 우리를 흔들지만…",
@@ -118,7 +115,9 @@ let endingTextDuration = 170; // 한 문장당 프레임 수
 
 function preload() {
   myFont = loadFont('NanumGothic.ttf');
-  
+  calmCharacterImg = loadImage('calmCharacter.png');
+  angerCharacterImg = loadImage('angerCharacter.png');
+  panicCharacterImg = loadImage('panicCharacter.png');
 }
 
 function setup() {
@@ -152,11 +151,11 @@ function draw() {
   else if (currentScreen === 'main') {
     orbitControl();
   
-    if (emotion === 'calm') 
+    if (emotion === 'calm' ) 
       drawCalmShapes();
-    else if (emotion === 'anger')
+    else if (emotion === 'anger' )
       drawAngerShapes();
-    else if (emotion === 'panic')
+    else if (emotion === 'panic' )
       drawPanicShapes();
     
     
@@ -170,7 +169,13 @@ function keyPressed() {
   if (key === 'a' || key === 'A') emotion = 'anger';
   else if (key === 'c' || key === 'C') emotion = 'calm';
   else if (key === 'f' || key === 'F') fullscreen(!fullscreen());
-  else if (keyCode === RIGHT_ARROW && currentScreen === 'intro') currentScreen = 'main';
+  else if (keyCode === RIGHT_ARROW && currentScreen === 'intro')       
+    currentScreen = 'main';
+  else if (keyCode === RIGHT_ARROW && indexNum < 4) {
+     emotion = emotionIndex[indexNum];
+    indexNum++;
+  }
+   
   else if (key === 'e' || key === 'E') currentScreen = 'credits';
   else if (key === 'p' || key === 'P') emotion = 'panic';
 }
@@ -180,17 +185,16 @@ function drawIntro() {
   camera();
   noLights();
   background(30);
-
+  
   push();
   translate(-width / 2 + 20, -height / 2 + 20); // 좌측 상단 위치
   textAlign(LEFT, TOP);
   fill(255, 180);
   textSize(14);
-  text("조작법 안내:\n감정 인터렉션\nC - 고요\nA - 분노\nP - 공포\nE - 엔딩/크레딧", 0, 0);
+  text("조작법 안내:\nC - 고요\nA - 분노\nP - 공포\nE - 엔딩/크레딧", 0, 0);
   pop();
-
-
-
+  
+  
   
   // 3개의 회전하는 토러스
   push();
@@ -210,7 +214,7 @@ function drawIntro() {
   stroke(170, 230, 210); // 민트색 토러스
   torus(100, 20, 24, 16);
   pop();
-
+  
   push();
   translate(0, -50, 0); // x: 왼쪽, y: 위쪽, z: 그대로
   rotateY(frameCount * 1.1);
@@ -218,7 +222,7 @@ function drawIntro() {
   stroke(255, 200, 180); // 주황색 토러스
   torus(100, 20, 24, 16);
   pop();
-
+  
   let t = introTextTimer % introTextDuration;
   let alpha = 0;
 
@@ -273,6 +277,9 @@ function drawIntro() {
 
 
 function drawCredits() {
+  
+  
+  
   background(0);
   noLights();
   textAlign(CENTER, CENTER);
@@ -312,29 +319,32 @@ function drawCredits() {
 function DisplayQuote() {
   let t = frameCount % changeInterval;
   let alpha;
-
-  if (t < 100) {
-    alpha = map(t, 0, 100, 0, 200);
-  } else if (t < 500) {
-    alpha = 200;
-  } else {
-    alpha = map(t, 500, 600, 200, 0);
-  }
-
+  
+  if (t < 30) {
+  alpha = map(t, 0, 30, 0, 200);         // 페이드 인
+} else if (t < 270) {
+  alpha = 200;                          // 유지
+} else {
+  alpha = map(t, 270, 300, 200, 0);     // 페이드 아웃
+}
+  
   let currentQuote;
   if (emotion === 'calm') {
+    
     currentQuote = calmQuote[quoteIndex];
-    if (t === 599) {
+    if (t === changeInterval - 1)
       quoteIndex = (quoteIndex + 1) % calmQuote.length;
     }
-  } else if (emotion === 'anger') {
+  else if (emotion === 'anger') {
     currentQuote = angerQuote[quoteIndex];
-    if (t === 599) {
+    if (t === changeInterval - 1) {
       quoteIndex = (quoteIndex + 1) % angerQuote.length;
     }
-  } else if (emotion === 'panic') {
+  } 
+  else if (emotion === 'panic') {
+    
     currentQuote = panicQuote[quoteIndex];
-    if (t === 599) {
+    if (t === changeInterval - 1) {
       quoteIndex = (quoteIndex + 1) % panicQuote.length;
     }
   }
@@ -355,6 +365,21 @@ function DisplayQuote() {
   textFont(myFont);
   textSize(20);
   text(currentQuote, 0, 0);
+  
+  
+  let charImg = null;
+ 
+  if (emotion === 'calm') charImg = calmCharacterImg;
+  else if (emotion === 'anger') charImg = angerCharacterImg;
+  else if (emotion === 'panic') charImg = panicCharacterImg;
+
+  if (charImg) {
+    image(charImg, -50,50, 170, 190);
+  }
+  
+  
+  
+  
   pop();
 }
 
@@ -435,6 +460,7 @@ function emotionTransition() {
   if (emotion !== prevEmotion) {
     transitionFrame = frameCount;
     prevEmotion = emotion;
+    quoteIndex = 0;
   }
 
   let elapsed = frameCount - transitionFrame;
