@@ -1,18 +1,46 @@
+class Sparkle {  // class 및 vector 관련 AI 참고함
+  constructor(x, y, z) {
+    this.pos = createVector(x, y, z);
+    this.vel = p5.Vector.random3D().mult(random(1, 3));
+    this.lifespan = 255;
+    this.size = random(3, 6);
+    this.color = color(random(200, 255), random(200, 255), random(100, 255));
+  }
+
+  update() {
+    this.pos.add(this.vel);
+    this.lifespan -= 4;
+  }
+
+  display() {
+    push();
+    translate(this.pos.x, this.pos.y, this.pos.z);
+    noStroke();
+    fill(this.color.levels[0], this.color.levels[1], this.color.levels[2], this.lifespan);
+    sphere(this.size);
+    pop();
+  }
+
+  isDead() {
+    return this.lifespan < 0;
+  }
+}
+
 class Particle {
   constructor() {
-    this.pos = p5.Vector.random3D().mult(random(100));
+    this.pos = p5.Vector.random3D().mult(random(100));//입자의 위치를 나타내는 3D벡터 AI 이용하여 제작
     this.vel = createVector(0, 0, 0);
-    this.color = color(255, 120, 0, 255)
+    this.color = color('#FFFF00')
   }
   explode() {
-    this.vel = p5.Vector.random3D().mult(random(3, 8));
+    this.vel = p5.Vector.random3D().mult(random(10,20));
   }
 
   update() {
     if (exploded) {
       this.pos.add(this.vel);
     } else {
-      this.pos.add(p5.Vector.random3D().mult(1.5)); // 진동
+      this.pos.add(p5.Vector.random3D().mult(1.5)); // 입자가 진동하는 부분 AI이용하여 제작
     }
   }
 
@@ -31,7 +59,7 @@ class FearParticle {
   constructor() {
     this.pos = p5.Vector.random3D().mult(random(500, 700));
 
-    // 카메라 쪽으로 날아오게
+    // 원뿔이 카메라 쪽으로 날아오게 하는 부분 AI 이용하여 제작
     let camPos = createVector(0, 0, 500);
     this.vel = p5.Vector.sub(camPos, this.pos).normalize().mult(random(5, 10));
 
@@ -47,7 +75,8 @@ class FearParticle {
     translate(this.pos.x, this.pos.y, this.pos.z);
 
     let dir = this.vel.copy().normalize();
-    let axis = createVector(0, 1, 0).cross(dir);   // ← 기준 
+    let axis = createVector(0, 1, 0).cross(dir);   
+    // 회전축과 각도 계산 AI 이용하여 제작 
     let angle = acos(createVector(0, 1, 0).dot(dir)); 
     if (axis.mag() > 0.0001) {
       rotate(angle, axis);
@@ -66,6 +95,14 @@ let fearParticles = [];
 let exploded = false;
 let explosionTimer = 200;
 let camPos;
+let sparkles=[];
+
+let balls = [];
+let pocket;
+let animationStarted = false;
+let animationStartFrame;
+let currentEmotion = "";
+let emotionEndLimit = animationStartFrame + 150 + 200;
 
 
 let emotionIndex = ['calm', 'anger', 'panic', 'joy'];
@@ -93,12 +130,17 @@ let panicQuote = [
   "나는 너를 혼란스럽게 하지만, 사실…\n나는 네가 얼마나, 소중한 존재인지를 보여주고 싶었을 뿐이야.",
 ];
 
+let joyQuote = [
+  "나는 기쁨이야!\n너는 여기까지 잘 견뎌냈어",
+  "감정은 돌고 돌아 결국 너를 위한 것이었어"
+];
+
 let quoteIndex = 0;
-let changeInterval = 300;
+let changeInterval = 300; //텍스트 전환 시간
 
 let introTexts = [
-  "감정은 때때로 우리를 흔들지만…",
-  "...그것은 우리가 이해해야 할, 하나의 구조입니다."
+  "안녕! 우리를 소개할게 — 우리는 너의 감정들이야.",
+  "너를 더 잘 이해하기 위해, 우리 이야기를 들려줄게."
 ];
 let introTextIndex = 0;
 let introTextTimer = 0;
@@ -118,6 +160,7 @@ function preload() {
   calmCharacterImg = loadImage('calmCharacter.png');
   angerCharacterImg = loadImage('angerCharacter.png');
   panicCharacterImg = loadImage('panicCharacter.png');
+  joyCharacterImg = loadImage('joyCharacter.png');
 }
 
 function setup() {
@@ -137,6 +180,14 @@ function setup() {
      fearParticles.push(new FearParticle());
     }
   }
+  
+   balls = [ // Vector 사용 관련 AI 참고함.
+ { pos: createVector(-200, -100, 0), color: color(255, 230, 0), delay: 0, emotion: "때로는 기쁨," },
+ { pos: createVector(-100, -100, 0), color: color(255, 50, 50), delay: 50, emotion: "때로는 분노," },
+ { pos: createVector(0, -100, 0), color: color(180, 100, 255), delay: 100, emotion: "때로는 공포," },
+ { pos: createVector(100, -100, 0), color: color(100, 150, 255), delay: 150, emotion: "때로는 평온," }
+ ];
+  pocket = createVector(0, 150, 0);
 }
 
 function draw() {
@@ -157,7 +208,8 @@ function draw() {
       drawAngerShapes();
     else if (emotion === 'panic' )
       drawPanicShapes();
-    
+    else if (emotion === 'joy')
+      drawJoyShapes();
     
     emotionTransition();
   }
@@ -178,6 +230,7 @@ function keyPressed() {
    
   else if (key === 'e' || key === 'E') currentScreen = 'credits';
   else if (key === 'p' || key === 'P') emotion = 'panic';
+  else if (key === 'j' || key === 'J') emotion = 'joy';
 }
 
 function drawIntro() {
@@ -191,35 +244,43 @@ function drawIntro() {
   textAlign(LEFT, TOP);
   fill(255, 180);
   textSize(14);
-  text("조작법 안내:\nC - 고요\nA - 분노\nP - 공포\nE - 엔딩/크레딧", 0, 0);
+  text("조작법 안내:\n→ : 화면 전환\nC : 고요\nA : 분노\nP : 공포\nJ : 기쁨\nE : 엔딩/크레딧", 0, 0);
   pop();
   
   
   
-  // 3개의 회전하는 토러스
+  // 4개의 회전하는 토러스
   push();
-  translate(-100, -100, 0); // x: 왼쪽, y: 위쪽, z: 그대로
-  rotateY(frameCount * 0.7);
-  rotateX(frameCount * 0.7);
-  stroke(200, 180, 220); // 보라색
+  translate(-250, -100, 0); // x: 왼쪽, y: 위쪽, z: 그대로
+  rotateY(frameCount * 0.5);
+  rotateX(frameCount * 0.5);
+  stroke(250, 0, 0); // 빨간색 (분노)
   strokeWeight(1.5);
   noFill();
   torus(100, 20, 24, 16);
   pop();
 
   push();
-  translate(100, -100, 0); // x: 왼쪽, y: 위쪽, z: 그대로
+  translate(-100, -50, 0); // x: 왼쪽, y: 위쪽, z: 그대로
+  rotateY(frameCount * 0.7);
+  rotateX(frameCount * 0.7);
+  stroke(153, 51, 255); // 보라색 토러스 (공포)
+  torus(100, 20, 24, 16);
+  pop();
+
+  push();
+  translate(50, -100, 0); // x: 왼쪽, y: 위쪽, z: 그대로
   rotateY(frameCount * 0.9);
   rotateX(frameCount * 0.9);
-  stroke(170, 230, 210); // 민트색 토러스
+  stroke(255, 200, 0); // 노란색 토러스 (기쁨)
   torus(100, 20, 24, 16);
   pop();
   
   push();
-  translate(0, -50, 0); // x: 왼쪽, y: 위쪽, z: 그대로
+  translate(200, -50, 0); // x: 왼쪽, y: 위쪽, z: 그대로
   rotateY(frameCount * 1.1);
-  rotateX(-frameCount * 1.1);
-  stroke(255, 200, 180); // 주황색 토러스
+  rotateX(frameCount * 1.1);
+  stroke(0, 0, 250); // 파란색 토러스 (슬픔)
   torus(100, 20, 24, 16);
   pop();
   
@@ -277,49 +338,124 @@ function drawIntro() {
 
 
 function drawCredits() {
-  
-  
-  
-  background(0);
-  noLights();
+  background(20);
+  noStroke();
+  lights();
+
+  if (!animationStarted) {
+    animationStarted = true;
+    animationStartFrame = frameCount;
+  }
+
+  // 주머니
+  push();
+  translate(pocket.x, pocket.y, pocket.z);
+  fill(0, 204, 204);
+  sphere(80);
+  pop();
+
+  // 감정 문구 초기화
+  currentEmotion = "";
+  let emotionEndLimit = animationStartFrame + 150 + 200;
+
+  for (let i = 0; i < balls.length; i++) {
+    let b = balls[i];
+    let t = frameCount - animationStartFrame - b.delay;
+
+    // 공 이동
+    if (t > 0 && t < 400) {
+      let amt = constrain(t / 800, 0, 1);
+      b.pos = p5.Vector.lerp(b.pos, pocket, amt);
+    }
+
+    let d = p5.Vector.dist(b.pos, pocket);
+    let displayDuration = (b.emotion === "때로는 평온,") ? 200 : 400;
+
+    if (frameCount < emotionEndLimit && d < 40 && t > 0 && t < displayDuration) {
+      currentEmotion = b.emotion;
+    }
+
+    // 공 그리기
+    push();
+    translate(b.pos.x, b.pos.y, b.pos.z);
+    fill(b.color);
+    sphere(30);
+    pop();
+  }
+
+  // 감정 텍스트
+  if (currentEmotion !== "") {
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(24);
+    text(currentEmotion, 0, -height / 3);
+  }
+
+  // 엔딩 문구
+  if (frameCount > emotionEndLimit && frameCount < emotionEndLimit + 400) {
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text("수많은 감정들이 때때로 너를 흔들겠지만,\n\n이를 모두 받아들일 때,\n\n너는 더 단단해질거야!", 0, -height / 4);
+  }
+
+  // 마지막 엔딩 크레딧
+  if (frameCount > emotionEndLimit + 250) {
+  orbitControl();
+  background(10);
+  fill(255);
+  textAlign(LEFT, TOP);
+  textSize(18);
+
+  let x = -width / 2 + 450;
+  let y = -height / 2 + 60;
+
+  // 이름 및 소감
+  let developerText = "김승미\n" +
+                      "이번 프로젝트는 일상에서 자주 느끼는 감정 네 가지를 시각적으로 표현하는 데 중점을 두었습니다. \n감정은 추상적인 개념이라 시각화가 쉽지 않았고, 사람마다 느끼고 표현하는 방식이 달라 이를 하나로 표현하는 데 많은 시간이 걸렸지만\n열심히 한만큼 결과물이 나와 많이 배우면서 즐겁게 작업했습니다.\n\n" + "신성현\n프로젝트를 통해 각자 역할을 분담하여 협업하며, 그 과정에서 코드 통합과 스타일 일관성 유지의 중요성을 실감했습니다.\n이러한 프로젝트의 경험은 앞으로 해야할 졸업 프로젝트에 많은 도움이 될 것 같습니다\n\n" + "이하경\n한 프로그램을 여러 명이 함께 만들 때 어려움이 많을 것이라고 예상했지만, 협업하여 만들어나가는 과정에서 책임감과 협동심을 배우게 되었습니다.\n또한, 프로그램을 만들며 한 학기 동안 배운 내용을 되짚어볼 수 있는 소중한 기회였습니다.\n\n";
+  text(developerText, x, y);
+
+  y += 320;
+
+  //AI 사용 비율
+  let aiText = "AI 활용 내역\n" +
+               "• 전체 코드 대비 AI 사용 비율: 약 60%\n" +
+               "• 감정별 캐릭터를 대표하는 이미지 AI(ComfyUI) 통해 생성함\n\n";
+  text(aiText, x, y);
+
+  y += 120;
+
+  //문법 정리 사항
+  let codeText = "JavaScript 및 p5.js 기능 요약\n\n" +
+                 "JavaScript 문법\n" +
+                 "- 클래스(class): Sparkle, Particle, FearParticle 객체 정의\n" +
+                 "- 조건문/반복문: if, for 사용\n" +
+                 "- 전역 변수/배열: 감정 상태 및 객체 저장\n" +
+                 "- 함수 분리: 감정별 draw 함수, DisplayQuote 등으로 기능별 분리\n\n" +
+                 "p5.js 기능\n" +
+                 "- 기본 구조: setup(), draw(), preload()\n" +
+                 "- 3D 그래픽: box(), sphere(), torus()로 3D 도형 표현\n" +
+                 "- 카메라 제어: orbitControl()로 3D 시점 회전\n" +
+                 "- 이미지 출력: loadImage(), image()로 캐릭터 이미지 출력\n" +
+                 "- 텍스트 처리: text(), fill(), alpha 기반 페이드 효과로 텍스트 출력";
+  text(codeText, x, y);
+
+  // 마무리 인사
   textAlign(CENTER, CENTER);
-  textFont(myFont);
-
-  // 페이드 인/아웃 처리
-  let t = endingTextTimer % endingTextDuration;
-  let alpha = 0;
-
-  if (t < 30) {
-    alpha = map(t, 0, 30, 0, 255); // 페이드 인
-  } else if (t < 120) {
-    alpha = 255; // 유지
-  } else {
-    alpha = map(t, 120, endingTextDuration, 255, 0); // 페이드 아웃
-  }
-
-  // 문장을 순서대로 번갈아 표시
-  if (t === 0 && endingTextTimer > 0) {
-    endingTextIndex = (endingTextIndex + 1) % endingTexts.length;
-  }
-
-  endingTextTimer++;
-
-  // 중앙 텍스트 표시
-  fill(255, alpha);
-  textSize(24);
-  text(endingTexts[endingTextIndex], 0, 0);
-
-  // 크레딧 텍스트
-  fill(255, 150);
-  textSize(14);
-  text("개발 · 시각화: 김승미, 이하경, 신성현", 0, height / 2 - 60);
+  textSize(16);
+  fill(180);
+  text("감사합니다.", 0, height / 2 - 80);
 }
+
+}
+
 
 
 function DisplayQuote() {
   let t = frameCount % changeInterval;
   let alpha;
   
+  //투명도 조정하여 페이드 인&아웃 조절하는 부분 AI 이용해 제작
   if (t < 30) {
   alpha = map(t, 0, 30, 0, 200);         // 페이드 인
 } else if (t < 270) {
@@ -328,9 +464,9 @@ function DisplayQuote() {
   alpha = map(t, 270, 300, 200, 0);     // 페이드 아웃
 }
   
+  //frameCounnt와 changeInterval 변수 사용하여 텍스트 전환 AI 도움 받아서 제작
   let currentQuote;
   if (emotion === 'calm') {
-    
     currentQuote = calmQuote[quoteIndex];
     if (t === changeInterval - 1)
       quoteIndex = (quoteIndex + 1) % calmQuote.length;
@@ -348,6 +484,12 @@ function DisplayQuote() {
       quoteIndex = (quoteIndex + 1) % panicQuote.length;
     }
   }
+  else if (emotion === 'joy') {
+    currentQuote = joyQuote[quoteIndex];
+  if (t === changeInterval - 1) {
+    quoteIndex = (quoteIndex + 1) % joyQuote.length;
+    }
+  }
   
 
   push();
@@ -362,6 +504,9 @@ function DisplayQuote() {
   else if (emotion === 'panic'){
     fill(200, 220, 255, alpha);
   }
+  else if (emotion === 'joy'){
+    fill(180, 120, 40, alpha)
+  }
   textFont(myFont);
   textSize(20);
   text(currentQuote, 0, 0);
@@ -372,13 +517,10 @@ function DisplayQuote() {
   if (emotion === 'calm') charImg = calmCharacterImg;
   else if (emotion === 'anger') charImg = angerCharacterImg;
   else if (emotion === 'panic') charImg = panicCharacterImg;
-
+  else if (emotion === 'joy') charImg = joyCharacterImg;
   if (charImg) {
     image(charImg, -50,50, 170, 190);
   }
-  
-  
-  
   
   pop();
 }
@@ -386,19 +528,20 @@ function DisplayQuote() {
 function drawCalmShapes() {
   angleOffset += 0.2;
   
-  background("#B9E0FD");
-  
-  strokeWeight(1);
-  DisplayQuote();
-  for (let zAngle = 0; zAngle < 180; zAngle += 30) {
-    for (let xAngle = 0; xAngle < 360; xAngle += 30) {
-      push();
-      rotateZ(zAngle);
-      rotateX(xAngle + angleOffset);
-      translate(0, 250, 0);
-      stroke(80, 50, 150);
-      box(20);
-      pop();
+    //3D box 이용하여 원 모양의 기하학적 도형 제작 AI 이용하여 제작
+    background("#B9E0FD");
+
+    strokeWeight(1);
+    DisplayQuote();
+    for (let zAngle = 0; zAngle < 180; zAngle += 30) {
+      for (let xAngle = 0; xAngle < 360; xAngle += 30) {
+        push();
+        rotateZ(zAngle);
+        rotateX(xAngle + angleOffset);
+        translate(0, 250, 0);
+        stroke(80, 50, 150);
+        box(20);
+        pop();
     }
   }
 }
@@ -407,20 +550,21 @@ function drawCalmShapes() {
 
 
 function drawAngerShapes() {
-  blendMode(BLEND)
-  background('#D32F2F');
+  blendMode(BLEND);
+  background(30);
   DisplayQuote();
+
   ambientLight(150);
-  pointLight(255, 100,100, 0, 0, 300);
+  pointLight(255, 100, 100, 0, 0, 300);
   rotateY(frameCount * 0.01);
 
-  noFill();
-  stroke(0);
-  strokeWeight(5)
-  box(200);
-
-  // 폭발
+  
   if (!exploded) {
+    stroke(216, 0, 0);
+    strokeWeight(5);
+    noFill();
+    box(200);
+
     explosionTimer--;
     if (explosionTimer <= 0) {
       exploded = true;
@@ -430,7 +574,7 @@ function drawAngerShapes() {
     }
   }
 
-  // 파티클 
+  
   for (let p of particles) {
     p.update();
     p.display();
@@ -450,6 +594,39 @@ function drawPanicShapes() {
   }
 }
 
+function drawJoyShapes() {
+  background('#FFFC95');
+  // 스파클
+  if (frameCount % 3 === 0) {
+    for (let i = 0; i < 5; i++) {
+      sparkles.push(new Sparkle(random(-500,500), random(-500,500), random(-500,500)));
+    }
+  }
+
+  // 스파클 업데이트 및 그리기
+  for (let i = sparkles.length - 1; i >= 0; i--) {
+    sparkles[i].update();
+    sparkles[i].display();
+    if (sparkles[i].isDead()) {
+      sparkles.splice(i, 1);
+    }}
+  angleOffset += 1;
+  strokeWeight(1);
+  DisplayQuote();
+  for (let zAngle = 0; zAngle < 180; zAngle += 30) {
+    for (let xAngle = 0; xAngle < 360; xAngle += 30) {
+      push();
+      rotateZ(zAngle);
+      rotateX(xAngle + angleOffset);
+      translate(0, 250, 0);
+      stroke(80, 50, 150);
+      box(20);
+      pop();
+    }
+  }
+}
+
+
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
@@ -457,12 +634,13 @@ function windowResized() {
 
 
 function emotionTransition() {
+  //감정 전환 판단 구조 (emotion !== prevEmotion) AI 사용하여 제작
   if (emotion !== prevEmotion) {
     transitionFrame = frameCount;
     prevEmotion = emotion;
     quoteIndex = 0;
   }
-
+  //블러 효과 AI 사용해서 제작
   let elapsed = frameCount - transitionFrame;
   if (elapsed < blurDuration) {
     let alpha = map(elapsed, 0, blurDuration, 255, 0);
